@@ -2,14 +2,18 @@ import { db } from 'baqend/realtime'
 
 class MovieService {
 
-
+    loadMovieDetails(title) {
+        let query = db.Movie.find()
+            .where({ 'id': {'$exists': true}})
+            .sort({ 'id': -1 });
+        return query.singleResult();
+    }
 
     /**
      * Loads a specific movie by title
      * @param {string} [title] The movie title
      */
     loadMovieByTitle(title) {
-        //TODO
         let query = db.Movie.find()
             .where({ 'title': title})
 			.sort({ 'id': -1 })
@@ -63,31 +67,25 @@ class MovieService {
     }
 
     loadMoviesByReleasedDateCountry(country, limit){
-        var isodate = new Date("1950-01-01T01:00:00Z").getTime();
-        console.log(isodate)
+        var isodate = new Date("01-01-1950").getTime();
         let query = db.Movie.find()
-            .where({'releases':{ $elemMatch: {'date': {$lte:{'$date': isodate}}, 'country': country}}})
+            .where({'releases': {'elemMatch': {'date':{$lte: new Date(isodate).toISOString()}}}})
             .sort({'id': -1 })
             .limit(new Number(limit));
-        console.log(query)
+        //console.log(query)
         return query;
     }
 
     loadMoviesByUserComment(username, limit){
-        let comment= this.commentsByUser(username);
-        console.log(comment)
+        let comment = db.MovieComment.find({"username": username});
         let query = db.Movie.find()
-            .where({'id': {$in: comment.toArray()}})
+            .where({'id': comment.id})
             .sort({ 'id': -1 })
             .limit(new Number(limit));
+        console.log(comment.id)
         return query;
     }
 
-    commentsByUser(username) {
-        let query = db.MovieComment.find()
-            .where({"username": username})
-        return query.toArray();
-    }
     /**
      * Queries movies filtered by the query arguments
      * @param {Object} [args] The query arguments

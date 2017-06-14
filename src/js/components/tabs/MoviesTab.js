@@ -97,7 +97,7 @@ class MoviesTab {
   }
 
   selectMovie(movie) {
-    MovieService.loadMovieByTitle(movie).then((movie) => {
+    MovieService.loadMovieDetails(movie).then((movie) => {
       this.selectedMovie = movie
       history.replaceState(null, null, '?' + $.param({movie: this.selectedMovie.title}) + '#movies')
       $("#movie-search").hide()
