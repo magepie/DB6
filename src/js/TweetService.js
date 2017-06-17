@@ -7,11 +7,10 @@ class TweetService {
    * @param {Object} [movie] The reference to the movie object
    */
   streamMovieTweets(movie) {
-    //TODO
+    var regx = ".*" + movie.title + ".*";
     let query = db.Tweet.find()
-	.where({ 'id': { '$exists' : true } })
-	.sort({ 'id': -1 })
-	.limit(10);
+    	.where({"text": {"$regex": regx}})
+    	.sort({ 'id': -1 });
     return query.resultStream()
   }
 

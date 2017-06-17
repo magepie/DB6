@@ -7,11 +7,9 @@ class CommentService {
      * @param {Object} [movie] The reference to the movie object
      */
     streamComments(movie) {
-        //TODO
         let query = db.MovieComment.find()
-            .where({ 'id': { '$exists' : true } })
-			.sort({ 'id': -1 });
-
+        .where({"movie.title": movie.title})
+        .sort({ 'id': -1 });
         return query.resultStream()
     }
 
@@ -31,7 +29,7 @@ class CommentService {
                 var regx = "^" + args.parameter;
                 query = db.MovieComment.find().where(
                   {"username": {"$regex": regx}}
-                );
+                ).limit(new Number(args.limit));
                 break;
             case 'keyword':
                 var regx = ".*" + args.parameter + ".*";
@@ -42,7 +40,7 @@ class CommentService {
                   { $or: [ { "username": {"$regex": regx} },
                          { "text": {"$regex": regx} }
                        ]
-                  } );
+                  } ).limit(new Number(args.limit));
         }
 
         return query.resultList({depth: 1}); // with depth: 1, the referenced movies will be loaded
