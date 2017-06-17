@@ -23,13 +23,28 @@ class TweetService {
    * @param {string} [args.limit=10] Max results
    */
   queryTweets(args) {
-    let query = db.Tweet.find()
-	.where({ 'id': { '$exists' : true } })
-	.sort({ 'id': -1 })
-	.limit(new Number(args.limit));
+    let query;
 
     switch (args.type) {
-        //TODO
+        case 'prefix':
+          var regx = "^" + args.parameter;
+          query = db.Tweet.find().where(
+            {"text": {"$regex": regx}}
+          ).limit(new Number(args.limit));
+          break;
+        case 'keyword':
+          var regx = ".*" + args.parameter + ".*";
+          query = db.Tweet.find().where(
+            {"text": {"$regex": regx}}
+          ).limit(new Number(args.limit));
+          break;
+        case 'followersOrFriends':
+          query = db.Tweet.find().where(
+            { $or: [ {  "user.followers_count": { "$gt": parseInt(args.parameter) }},
+                   {  "user.friends_count": { "$gt": parseInt(args.parameter) }}
+                 ]
+            }).limit(new Number(args.limit));
+          break;
     }
 
     return query.resultStream()
