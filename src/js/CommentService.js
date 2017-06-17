@@ -32,6 +32,7 @@ class CommentService {
                 query = db.MovieComment.find().where(
                   {"username": {"$regex": regx}}
                 );
+                break;
             case 'keyword':
                 var regx = ".*" + args.parameter + ".*";
                 //query = db.MovieComment.find()
