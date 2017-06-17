@@ -4,7 +4,7 @@ class MovieService {
 
     loadMovieDetails(title) {
         let query = db.Movie.find()
-            .where({ 'id': {'$exists': true}})
+            .where({ 'title': title})
             .sort({ 'id': -1 });
         return query.singleResult();
     }
@@ -76,14 +76,22 @@ class MovieService {
         return query;
     }
 
-    loadMoviesByUserComment(username, limit){
-        let comment = db.MovieComment.find({"username": username});
+    loadMoviesByUserComment(username, limit) {
+        let comment = db.MovieComment.find()
+            .where({'username': username})
+            .project({'username':false,'user':false,'text':false})
+            .sort({'id': -1})
+            .limit(limit);
+
+
+        comment.resultList((result)=> console.log(result))
+        /*
         let query = db.Movie.find()
-            .where({'id': comment.id})
-            .sort({ 'id': -1 })
-            .limit(new Number(limit));
-        console.log(comment.id)
-        return query;
+            .where({'id': {'$in':comment.resultList((result)=> result)} })
+            .sort({'id': -1})
+            .limit(limit);
+        query.resultList((result)=> console.log(result))*/
+        return comment;
     }
 
     /**
@@ -114,12 +122,12 @@ class MovieService {
             case 'genrePartialmatch':
                 query = this.loadMoviesByGenrePartialMatch(args.parameter, args.limit);
                 break;
-           /* case 'release':
+            case 'release':
                 query = this.loadMoviesByReleasedDateCountry(args.parameter, args.limit);
                 break;
             case 'comments':
                 query = this.loadMoviesByUserComment(args.parameter, args.limit);
-                break; */
+                break;
         }
         return query.resultList();
     }
