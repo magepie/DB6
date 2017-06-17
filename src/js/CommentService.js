@@ -7,11 +7,9 @@ class CommentService {
      * @param {Object} [movie] The reference to the movie object
      */
     streamComments(movie) {
-        //TODO
         let query = db.MovieComment.find()
-            .where({ 'id': { '$exists' : true } })
-			.sort({ 'id': -1 });
-
+        .where({"movie.title": movie.title})
+        .sort({ 'id': -1 });
         return query.resultStream()
     }
 
@@ -23,13 +21,26 @@ class CommentService {
      * @param {string} [args.limit=10] Max results
      */
     queryComments(args) {
-        let query = db.MovieComment.find()
-		.where({ 'id': { '$exists' : true } })
-		.sort({ 'id': -1 })
-		.limit(new Number(args.limit));
+        let query;
 
         switch (args.type) {
             //TODO
+            case 'prefix':
+                var regx = "^" + args.parameter;
+                query = db.MovieComment.find().where(
+                  {"username": {"$regex": regx}}
+                ).limit(new Number(args.limit));
+                break;
+            case 'keyword':
+                var regx = ".*" + args.parameter + ".*";
+                //query = db.MovieComment.find()
+                //.where({'username': {$regex: regx}});
+
+                query = db.MovieComment.find().where(
+                  { $or: [ { "username": {"$regex": regx} },
+                         { "text": {"$regex": regx} }
+                       ]
+                  } ).limit(new Number(args.limit));
         }
 
         return query.resultList({depth: 1}); // with depth: 1, the referenced movies will be loaded
@@ -43,8 +54,11 @@ class CommentService {
      * @param {string} [comment.text] The comment text
      */
     addComment(movie, comment) {
-        //TODO
-        alert("Comment adding not implemented, yet!");
+        var cmnt = new db.MovieComment();
+        cmnt.movie  = movie;
+        cmnt.username = comment.username;
+        cmnt.text = comment.text;
+        cmnt.insert();
     }
 
     /**
@@ -53,10 +67,14 @@ class CommentService {
      * @param {String} [newText] The new text
      */
     editComment(comment, newText) {
-        //TODO
-        alert("Comment editing not implemented, yet!");
+      db.MovieComment.find().where({
+        "username": comment.username,
+        "text": comment.text})
+      .singleResult((cmnt) => {
+          cmnt.text = newText;
+          cmnt.update();
+        });
     }
-
 }
 
 export default new CommentService()
