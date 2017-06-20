@@ -1,6 +1,12 @@
 import { db } from 'baqend/realtime'
 
 class MovieService {
+    constructor() {
+        this.arr = new Array()
+    }
+    setArr(arr){
+        this.arr= arr;
+    }
 
     loadMovieDetails(title) {
         let query = db.Movie.find()
@@ -67,32 +73,51 @@ class MovieService {
     }
 
     loadMoviesByReleasedDateCountry(country, limit){
-        var isodate = new Date("01-01-1950").getTime();
         let query = db.Movie.find()
-            .where({'releases': {'elemMatch': {'date':{$lte: new Date(isodate).toISOString()}}}})
-            .sort({'id': -1 })
+            .where({ 'id': { '$exists' : true },
+                $and: [
+                    { year:
+                        {
+                            $lt: "1950"
+                        }
+                    },
+                    {
+                        'releases.country':country
+                    }
+                ]
+            })
+            .sort({ 'id': -1 })
             .limit(new Number(limit));
-        //console.log(query)
         return query;
     }
 
     loadMoviesByUserComment(username, limit) {
         let comment = db.MovieComment.find()
             .where({'username': username})
-            .project({'username':false,'user':false,'text':false})
             .sort({'id': -1})
-            .limit(limit);
-
-
-        comment.resultList((result)=> console.log(result))
-        /*
-        let query = db.Movie.find()
-            .where({'id': {'$in':comment.resultList((result)=> result)} })
-            .sort({'id': -1})
-            .limit(limit);
-        query.resultList((result)=> console.log(result))*/
-        return comment;
+            .limit(limit)
+            .resultList().then((result)=>this.getIDS(result));
+        let query;
+        if(this.arr.length>0)
+            query= db.Movie.find()
+                .where({'id': {'$in':this.arr} })
+                .sort({'id': -1})
+                .limit(limit);
+        else console.log('empty id object')
+        return query;
     }
+
+    getIDS(results) {
+        var ids= new Array();
+        var i=0;
+        var len= results.length;
+        for (; i<len; i++){
+            ids.push(results[i]['movie']._metadata.id)
+        }
+        this.setArr(ids);
+    }
+
+
 
     /**
      * Queries movies filtered by the query arguments
@@ -101,6 +126,7 @@ class MovieService {
      * @param {string} [args.parameter] The query parameter
      * @param {string} [args.limit=10] Max results
      */
+
     queryMovies(args) {
         let query;
         switch (args.type) {
@@ -126,7 +152,7 @@ class MovieService {
                 query = this.loadMoviesByReleasedDateCountry(args.parameter, args.limit);
                 break;
             case 'comments':
-                query = this.loadMoviesByUserComment(args.parameter, args.limit);
+                query= this.loadMoviesByUserComment(args.parameter, args.limit);
                 break;
         }
         return query.resultList();
