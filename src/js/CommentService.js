@@ -8,9 +8,9 @@ class CommentService {
      */
     streamComments(movie) {
         let query = db.MovieComment.find()
-        .where({"movie.title": movie.title})
+        .where({"movie": movie})
         .sort({ 'id': -1 });
-        return query.resultStream()
+        return query.resultStream({depth: 1})
     }
 
     /**
@@ -24,7 +24,6 @@ class CommentService {
         let query;
 
         switch (args.type) {
-            //TODO
             case 'prefix':
                 var regx = "^" + args.parameter;
                 query = db.MovieComment.find().where(
@@ -33,9 +32,6 @@ class CommentService {
                 break;
             case 'keyword':
                 var regx = ".*" + args.parameter + ".*";
-                //query = db.MovieComment.find()
-                //.where({'username': {$regex: regx}});
-
                 query = db.MovieComment.find().where(
                   { $or: [ { "username": {"$regex": regx} },
                          { "text": {"$regex": regx} }
